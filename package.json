@@ -1,0 +1,22 @@
+{
+  "name": "opencode-persian-rtl",
+  "version": "1.0.2",
+  "private": false,
+  "description": "Vazirmatn + smart Persian/English RTL for OpenCode Desktop (Electron). Adapted for OpenCode 2.1.4 composer-editor.",
+  "license": "MIT",
+  "scripts": {
+    "test": "node tests/runtime.test.cjs",
+    "check": "node --check runtime/runtime.js && node tests/runtime.test.cjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "opencode",
+    "persian",
+    "farsi",
+    "rtl",
+    "vazirmatn",
+    "electron"
+  ]
+}
