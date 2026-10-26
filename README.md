@@ -1,106 +1,110 @@
-# OpenCode Persian RTL
+# OpenCode Persian & Arabic RTL
 
-Vazirmatn font + smart Persian/English direction for the **main OpenCode Desktop** app on Windows.
+**Readable Persian and Arabic-script chat in OpenCode Desktop — with Latin text and code kept left-to-right.**
 
-This package patches `resources\app.asar` only. It does **not** modify `OpenCode.exe`, your chats, or settings.
+[English](README.md) · [فارسی](README.fa.md) · [العربية](README.ar.md)
 
-Based on [omid3098/opencode-persian-typography](https://github.com/omid3098/opencode-persian-typography), adapted for **OpenCode Desktop 2.1.4** where the prompt component is `data-component="composer-editor"` (older builds used `prompt-input`).
+> [!IMPORTANT]
+> **Unofficial Windows Desktop patch.** This project is not affiliated with OpenCode. It modifies the installed Electron `resources\app.asar` file and is not a native OpenCode plugin. **Check OpenCode's built-in RTL / Arabic-language options first**; use this patch only when those options do not meet your text-rendering needs.
 
-## What it does
+## The problem it addresses
 
-- Loads Vazirmatn for Arabic-script characters (Persian stays readable; Latin/code stay on system fonts)
-- Sets `dir="rtl"` / `dir="ltr"` from letter counts on chat prose, Home titles, tabs, and the composer
-- Keeps code, paths, URLs, emails, and hashes LTR
-- Recomputes direction while answers stream and while you type
+Mixed-script messages can be hard to read when Persian or Arabic prose, English names, paths and code share the same fixed text direction. This project applies **direction detection per supported text block** and loads **Vazirmatn** for Arabic-script glyphs.
 
-## Requirements
+| Content | Intended display |
+| --- | --- |
+| `این متن فارسی درباره GitHub است.` | RTL prose |
+| `هذا مثال عربي مع OpenCode.` | RTL prose |
+| `OpenCode supports multiple models.` | LTR |
+| `C:\Users\name\project` and fenced code | LTR |
 
-- Windows
-- OpenCode Desktop (Electron)
-- Node.js 18+ (for `npx @electron/asar`)
+### What it changes
 
-Default install path checked:
+- Chat prose, selected session titles/tabs and the composer: automatic text-direction selection.
+- Code blocks, paths, URLs, emails and technical content: LTR handling.
+- Arabic-script typography: the bundled Vazirmatn font.
+- Response streaming and input: rescan when text changes.
 
-```text
-%LOCALAPPDATA%\Programs\@opencodedesktop\OpenCode.exe
-```
+**It does not** translate OpenCode's interface, modify model responses or support the terminal-based TUI.
 
-Also tries `@opencode-aidesktop` and `OpenCode`. Override with:
+## Compatibility
 
-```powershell
-$env:OPENCODE_EXE = "D:\path\to\OpenCode.exe"
-```
+| Requirement | Status |
+| --- | --- |
+| OS | Windows |
+| App | OpenCode **Desktop (Electron)**, not OpenCode CLI/TUI |
+| Renderer version | Designed for **OpenCode Desktop 2.1.4** private selectors; later releases are **not guaranteed** |
+| Tooling | Node.js 18+ and npm/npx |
+| Internet | `npx` may download `@electron/asar` at install/verification time |
 
-## Install
-
-Close every OpenCode window, then either:
-
-**One click**
-
-```bat
-install.bat
-```
-
-**PowerShell**
+Other Windows installation layouts may require setting `OPENCODE_EXE`:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\install.ps1
+$env:OPENCODE_EXE = "D:\Apps\OpenCode\OpenCode.exe"
 ```
 
-Before changing anything, the installer:
+## Installation
 
-1. Backs up the original `app.asar` to `%LOCALAPPDATA%\OpenCodePersianTypography\app.asar.backup`
-2. Checks renderer contracts (`home-session-row`, `user-message-text`, `text-part-body`, `composer-editor`)
-3. Injects `out/renderer/oppt/` + a small block into `index.html`
-4. Repacks `app.asar`
+**1. Download or clone this repository. Close OpenCode completely and save unfinished work.**
 
-## Verify
+**2. From PowerShell in the repository folder, run:**
 
 ```powershell
 npm test
-powershell -ExecutionPolicy Bypass -File .\doctor.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-Then open OpenCode and check one Persian message and the composer.
+The PowerShell installer refuses to proceed while OpenCode is running. The optional `install.bat` wrapper instead **force-closes** OpenCode; it can discard unsaved work.
 
-## Uninstall
+**3. Reopen OpenCode and check mixed Persian/Arabic and English messages, code fences, tables and the composer.**
 
-```bat
-uninstall.bat
-```
-
-or:
+**4. Check installation state:**
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\uninstall.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\doctor.ps1
 ```
 
-Restores the recorded original `app.asar`. If OpenCode updated and hashes no longer match, uninstall refuses (safe).
+The installer stores its original-archive backup and state under:
 
-## After OpenCode updates
+```text
+%LOCALAPPDATA%\OpenCodePersianTypography\
+```
 
-The official updater may replace `app.asar`. Close OpenCode and run `install.bat` again.
+## Restore / uninstall
 
-If install stops with `missing '…'`, OpenCode changed internal `data-component` / `data-slot` names — update selectors in `runtime/runtime.js` and the contract list in `install.ps1`.
+Close OpenCode, then run:
 
-## Compatibility notes (2.1.4)
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\uninstall.ps1
+```
 
-| Older selector | OpenCode 2.1.4 |
+Or run `uninstall.bat` (which force-closes OpenCode). Restoration checks recorded hashes and refuses to overwrite an archive changed by an update. **Do not manually restore a backup from an older OpenCode version.**
+
+## Updates, limitations and safety
+
+- An OpenCode update can replace the patch. The private DOM selectors can change between versions.
+- This installer currently repacks `app.asar` and does **not** provide a complete atomic-install / unpacked-file preservation guarantee. **Use only after testing on your specific installed build.**
+- Existing automated tests cover selected JavaScript logic and static checks, **not** a full end-to-end Windows installation, rollback or visual RTL compatibility.
+- The patch includes no remote runtime script or telemetry. However, `npx` may fetch its build tool during installation; the tool version is not pinned in this release.
+- Font and runtime assets are bundled locally; the program executable, chats and settings are not intentionally edited.
+
+**Prefer native support when it works:** OpenCode 2.x has Arabic language/RTL layout work, but full chat-level RTL remains under discussion: [OpenCode RTL issue #26915](https://github.com/anomalyco/opencode/issues/26915). This patch should be treated as a version-specific workaround.
+
+## Troubleshooting
+
+| Symptom | Action |
 | --- | --- |
-| `data-component="prompt-input"` | `data-component="composer-editor"` |
+| `OpenCode Desktop was not found` | Set `OPENCODE_EXE` to the correct `OpenCode.exe` path |
+| `OpenCode renderer changed` | Stop. The installed version is not verified; do **not** bypass the compatibility check |
+| Patch disappears after update | Recheck compatibility before reinstalling |
+| Restore refused | Archive hashes changed; repair/reinstall the matching official OpenCode build rather than forcing an old backup |
+| Arabic layout already works | Prefer the built-in functionality and avoid an unnecessary patch |
 
-Runtime version marker: `1.0.2-oc214`.
+## License and credits
 
-## Security
+- Patch code and installer: MIT — [LICENSE](LICENSE)
+- Vazirmatn: SIL Open Font License 1.1 — [fonts/OFL.txt](fonts/OFL.txt)
+- Adapted from [omid3098/opencode-persian-typography](https://github.com/omid3098/opencode-persian-typography)
+- Font by [Saber Rastikerdar / Vazirmatn](https://github.com/rastikerdar/vazirmatn)
 
-All runtime code and the font are local files. No remote load, no debug port, no message rewriting.
-
-## License
-
-- Runtime / installer: MIT
-- Vazirmatn: SIL OFL 1.1 (see `fonts/OFL.txt`)
-
-## Credits
-
-- Upstream idea and original installer: [omid3098/opencode-persian-typography](https://github.com/omid3098/opencode-persian-typography)
-- Font: [rastikerdar/vazirmatn](https://github.com/rastikerdar/vazirmatn)
+See [NOTICE.md](NOTICE.md) for attribution. Contributions and regression reports are welcome through GitHub issues.
